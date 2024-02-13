@@ -64,6 +64,8 @@ commit
 #######################
 vendor = input('Which vendor do you need, 1.Huawei or 2.Juniper:')
 if vendor == '1':
+    hostname = input('Hostname: ')
+    host_ip = input('Host IP: ')
     next_hop_ip = input('Next-hop IP:')
     server_ips = []
     var1 = []
@@ -76,7 +78,8 @@ if vendor == '1':
     for ip in server_ips:
         var1.append(f'ip route-static {ip} 255.255.255.255 {next_hop_ip}') #在形成 var1 列表時去除每個命令字符串的前導和尾隨空格,如 f' ip, IP 前不能有空隔。
 
-    print('''Solution:
+    print(f'''Solution:
+1.On {hostname} ({host_ip}) router
 
 system-view
 #''')
@@ -84,7 +87,7 @@ system-view
         print(command.strip())  # 去掉命令前面的空格
 
     print('''#
-dis configuration commit list
+display configuration commit list
 #
 commit trial 300
 #
@@ -92,14 +95,15 @@ commit
 return
 save
 ''', end='')    # 使用 end='' 防止插入額外的空行
-    print('''
+    print(f'''
 Rollback plan:
+1.On {hostname}({host_ip}) router
 system-view
 #''')
     for command in var1:
         print(f'undo {command}')
     print('''#
-dis configuration commit list
+display configuration commit list
 #
 commit trial 300
 #
@@ -108,8 +112,9 @@ return
 save
 ''')
 
-
 elif vendor == '2':
+    hostname = input('Hostname: ')
+    host_ip = input('Host IP: ')
     next_hop_ip = input('Next-hop IP:')
     server_ips = []
     var1 = []
@@ -120,8 +125,8 @@ elif vendor == '2':
         server_ips.append(server_ip)
     for ip in server_ips:
         var1.append(f'set routing-options static route {ip}/32 next-hop {next_hop_ip}')
-    print('''Solution:
-
+    print(f'''Solution:
+1.On {hostname}({host_ip}) router
 configure
 #
 ''', end='')
@@ -134,8 +139,9 @@ commit confirmed 10
 #
 commit
 ''')
-    print('''
+    print(f'''
 Rollback plan:
+1.On {hostname}({host_ip}) router
 configure
 #
 ''', end='')
