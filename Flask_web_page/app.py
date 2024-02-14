@@ -37,8 +37,8 @@ def index():
 @app.route('/generate', methods=['POST'])
 def generate_config():
     # 从表单中获取用户输入的数据
-    vendor = request.form['vendor']
-    hostname = request.form['hostname']
+    vendor = request.form['vendor']         #request.form 是一個用於處理 HTTP POST 請求的物件，而 [‘vendor’] 則是從該表單中提取特定欄位的方式。如果表單中有一個名為 ‘vendor’ 的欄位，這行程式碼將把該欄位的值存儲在 vendor 變數中。它應用在 index.html 裡的 <label for="vendor">
+    hostname = request.form['hostname']     #同上 它應用在 index.html 裡的 <label for="hostname">Hostname:</label>
     host_ip = request.form['host_ip']
     next_hop_ip = request.form['next_hop_ip']
     server_ips = request.form.getlist('server_ip')
@@ -54,7 +54,8 @@ def generate_config():
 1.On {hostname} ({host_ip}) router
 
 system-view
-#'''
+#
+'''
     for command in var1:
         solution += command.strip() + '\n'
 
@@ -68,11 +69,12 @@ return
 save
 '''
 
-    rollback_plan = f'''
-Rollback plan:
+    rollback_plan = f'''Rollback plan:    
 1.On {hostname}({host_ip}) router
+
 system-view
-#'''
+#
+'''
     for command in var1:
         rollback_plan += f'undo {command}\n'
 
@@ -95,5 +97,4 @@ if __name__ == '__main__':
 
 
 
-
-
+##########################################################
