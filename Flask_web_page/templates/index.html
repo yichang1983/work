@@ -6,6 +6,21 @@
     <meta charset="UTF-8">  <!--<meta charset="UTF-8">: 指定字符编码为 UTF-8，以支持包含中文等非 ASCII 字符的文本。  -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">   <!--<meta name="viewport" content="width=device-width, initial-scale=1.0">: 设置视口（viewport），让页面在移动设备上正常显示，并让页面宽度与设备宽度相匹配，初始缩放为 1.0。 -->
     <title>Configuration Generator</title>   <!--设置页面标题为 "Configuration Generator  -->
+
+ <!-- 底下的style 排版就用在Hostname, Host IP, Next-hop IP 裡，下面是它的解釋：form-row 类定义了每个表单行的样式，设置了下边距为 10px。.form-row label 类定义了标签的样式，设置了固定宽度为 150px，并使用 inline-block 显示在同一行。.form-row input[type="text"] 类定义了文本输入框的样式，使用了计算宽度，以使其填充剩余的空间，并添加了左边距为 10px，使其与标签分隔开。 -->
+    <style>
+        .form-row {
+            margin-bottom: -3px;
+        }
+        .form-row label {
+            width: 100px;
+            display: inline-block;
+        }
+        .form-row input[type="text"] {
+            width: 200px; /* 设置一个固定的宽度 */
+            margin-left: 1px;
+        }
+    </style>
 </head>
 <body>
     <form action="/generate" method="post">  <!--<form>: $$$ 创建一个表单，用于用户输入。action="/generate": 指定表单提交后的目标 URL，这里是 /generate 路由。
@@ -16,39 +31,76 @@ method="post": 指定表单提交的 HTTP 方法为 POST。, 這兒乎應了app.
             <option value="2">Juniper</option>
         </select>
         <br>     <!--<br>: 创建一个换行符，使得后续元素换行显示。  -->
+        <div class="form-row">
         <label for="hostname">Hostname:</label>             <!--<br>: 讓 Hostname 顯示在網頁上 -->
         <input type="text" name="hostname" id="hostname">     <!--$$$ <input>: 创建一个输入框。type="text": 指定输入框类型为文本。name="hostname": 定义输入框的名称，将用于在服务器端获取用户输入的主机名。id="hostname": 为输入框设置一唯一标识符，方便 JavaScript 脚本操作。  -->
+        </div>
         <br>
+        <div class="form-row">
         <label for="host_ip">Host IP:</label>
         <input type="text" name="host_ip" id="host_ip">  <!--同上，创建了一个用于输入主机 IP 的输入框。  -->
+        </div>
         <br>
+        <div class="form-row">
         <label for="next_hop_ip">Next-hop IP:</label>
         <input type="text" name="next_hop_ip" id="next_hop_ip">  <!--同上，创建了一个用于输入下一跳 IP 的输入框。  -->
+        </div>
         <br>
-        <label for="server_ip">Server IP (type 0 to stop):</label>
+        <div class="form-row">
+        <label for="server_ip">Server IP:</label>
         <input type="text" name="server_ip" id="server_ip">      <!--同上，创建了一个用于输入服务器 IP 的输入框。  -->
-        <button type="button" id="add_ip">Add IP</button>    <!-- $$$ <button>: 创建一个按钮。type="button": 指定按钮类型为普通按钮，不会触发表单提交。id="add_ip": 为按钮设置一个唯一标识符，方便 JavaScript 脚本操作。内容为 "Add IP"，用于添加更多的服务器 IP 输入框。  -->
+        </div>
+        <br>
+        <div class="form-row">
+        <div id="server_ips"></div>
+        <button type="button" id="add_extra server ip">Add extra Server IP</button>    <!-- $$$ <button>: 创建一个按钮。type="button": 指定按钮类型为普通按钮，不会触发表单提交。id="add_extra server ip": 为按钮设置一个唯一标识符，方便 JavaScript 脚本操作。内容为 "Add IP"，用于添加更多的服务器 IP 输入框。  -->
         <div id="server_ips"></div>      <!--<div>: 创建一个块级元素，用于包含动态添加的服务器 IP 输入框。id="server_ips": 为 <div> 设置一个唯一标识符，方便 JavaScript 脚本操作。  -->
+        </div>
+        <br>
         <br>
         <button type="submit">Generate Configuration</button>        <!--<button>: 创建一个提交按钮，用于提交表单。type="submit": 指定按钮类型为提交按钮，点击后会触发表单提交。  -->
     </form>
-    <!-- $$$ 㡳下的 script 的一行行解釋如下：
+<!-- $$$ 㡳下的 script 的一行行解釋如下：
 * <script>: 创建一个 JavaScript 脚本块。
-* document.getElementById('add_ip').addEventListener('click', function() { ... });: 给 "Add IP" 按钮添加一个点击事件监听器，当点击按钮时，执行后面的函数。
-* document.createElement('input'): 创建一个 <input> 元素。
-* input.type = 'text': 将 <input> 元素的类型设为文本输入框。
-* input.name = 'server_ip': 设置 <input> 元素的名称为 "server_ip"，与表单中的服务器 IP 输入框相对应。
-* input.placeholder = 'Server IP': 设置输入框的占位符为 "Server IP"。
-* document.getElementById('server_ips').appendChild(input): 将创建的 <input> 元素添加到 <div id="server_ips"> 中，使其动态显示在页面上。
-  -->
+* document.getElementById('add_extra server ip'): 使用 getElementById 方法获取 id 为 "add_extra server ip" 的元素。在这里，我们获取了 "add_extra server ip" 按钮的元素。
+* addEventListener('click', function() { ... }): 使用 addEventListener 方法给选定的元素添加事件监听器。在这里，我们添加了一个点击事件监听器，当 "Add extra Server IP" 按钮被点击时，会执行后面的函数。
+
+* var server_ips = document.getElementById('server_ips');: 使用 getElementById 方法获取 id 为 "server_ips" 的元素。在这里，我们获取了一个 <div> 元素，它用于包含动态添加的服务器 IP 输入框。
+
+* document.createElement('label'): 使用 createElement 方法创建一个新的 <label> 元素。
+label.setAttribute('for', 'server_ip');: 使用 setAttribute 方法设置 <label> 元素的 for 属性为 "server_ip"，这是为了与刚创建的 <input> 元素关联起来。
+label.textContent = 'Server IP:';: 设置 <label> 元素的文本内容为 "Server IP:"。
+server_ips.appendChild(label);: 将新创建的 <label> 元素添加到 server_ips 这个 <div> 元素中，作为其子元素。
+
+* document.createElement('input'): 使用 createElement 方法创建一个新的 <input> 元素。
+input.type = 'text';: 将新创建的 <input> 元素的类型设置为文本输入框。
+input.name = 'server_ip';: 将新创建的 <input> 元素的名称设置为 "server_ip"，这与表单中的服务器 IP 输入框相对应。
+input.placeholder = 'Server IP';: 将新创建的 <input> 元素的占位符设置为 "Server IP"。
+server_ips.appendChild(input);: 将新创建的 <input> 元素添加到 server_ips 这个 <div> 元素中，作为其子元素。
+
+* document.createElement('br'): 使用 createElement 方法创建一个新的 <br> 元素，即换行符。
+server_ips.appendChild(document.createElement('br'));: 将新创建的 <br> 元素添加到 server_ips 这个 <div> 元素中，作为其子元素。这样可以确保每个新的输入框和标签都显示在单独的一行上。
+ -->
 
     <script>
-        document.getElementById('add_ip').addEventListener('click', function() {
+        document.getElementById('add_extra server ip').addEventListener('click', function() {
+            var server_ips = document.getElementById('server_ips');
+
+            // 创建新的标签
+            var label = document.createElement('label');
+            label.setAttribute('for', 'server_ip');
+            label.textContent = 'Server IP:';
+            server_ips.appendChild(label);
+
+            // 创建新的输入框
             var input = document.createElement('input');
             input.type = 'text';
             input.name = 'server_ip';
             input.placeholder = 'Server IP';
-            document.getElementById('server_ips').appendChild(input);
+            server_ips.appendChild(input);
+
+            // 创建新的换行符
+            server_ips.appendChild(document.createElement('br'));
         });
     </script>
 </body>
