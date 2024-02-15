@@ -27,7 +27,7 @@
 method="post": 指定表单提交的 HTTP 方法为 POST。, 這兒乎應了app.py/flask 裡的 "@app.route('/generate', methods=['POST'])"  -->
         <label for="vendor">Which vendor do you need, 1.Huawei or 2.Juniper:</label>     <!--$$$ <label for="vendor">: 创建一个标签用于说明下面的下拉框。  -->
         <select name="vendor" id="vendor">   <!--$$$ <select>: 创建一个下拉框。 name="vendor": 定义下拉框的名称，将用于在服务器端获取用户选择的值。 id="vendor": 为下拉框设置一个唯一标识符，方便 JavaScript 脚本操作。  -->
-            <option value="1">Huawei</option>   <!-- $$$ <option>: 定义下拉框的选项。value="1": 指定选项的值为 "1"。value="2": 指定选项的值为 "2"。  -->
+            <option value="1">Huawei</option>   <!-- $$$ <option>: 在網頁中定义下拉框的选项。value="1" 代表Huawei。 value="2"代表Juniper。 在Flask的python程式碼（app.py）应用程序中，使用request.form['vendor']来获取表单中名为'vendor'的字段的值  -->
             <option value="2">Juniper</option>
         </select>
         <br>     <!--<br>: 创建一个换行符，使得后续元素换行显示。  -->
