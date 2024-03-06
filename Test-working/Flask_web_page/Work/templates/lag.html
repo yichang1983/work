@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Generator</title>
+
+    <style>
+        .form-row {
+            margin-bottom: -3px;
+        }
+        .form-row label {
+            width: 100px;
+            display: inline-block;
+        }
+        .form-row input[type="text"] {
+            width: 200px;
+            margin-left: 1px;
+        }
+    </style>
+</head>
+<body>
+    <form action="/generate" method="POST">
+        <label for="vendor">Which vendor do you need, 1.Huawei, 2.H3C, 3.Arista, 4.Cisco:</label>
+        <select name="vendor" id="vendor">
+            <option value="1">Huawei</option>
+            <option value="2">H3C</option>
+            <option value="3">Arista</option>
+            <option value="4">Cisco</option>
+        </select>
+        <br>
+        <br>
+        <label for="mode">Mode 2 (Static/On) or Mode 4 (LACP/Active):</label>
+        <select name="mode" id="mode">
+            <option value="2">Mode 2</option>
+            <option value="4">Mode 4</option>
+        </select>
+        <br>
+        <br>
+        <div class="form-row">
+            <label for="switch_port">Switch Port:</label>
+            <input type="text" name="switch_port" id="switch_port">
+        </div>
+        <br>
+        <div class="form-row">
+            <label for="server_ip">Server IP:</label>
+            <input type="text" name="server_ip" id="server_ip">
+        </div>
+        <br>
+        <br>
+        <input type="submit" value="Generate Configuration">
+    </form>
+
+    <script>
+        // 添加事件监听器来动态生成 Server IP 输入框
+        document.addEventListener('DOMContentLoaded', function() {
+            var addExtraBtn = document.createElement('button');
+            addExtraBtn.textContent = 'Add Extra Server IP';
+            addExtraBtn.addEventListener('click', function() {
+                var serverIpsDiv = document.createElement('div');
+                var label = document.createElement('label');
+                label.textContent = 'Server IP:';
+                var input = document.createElement('input');
+                input.type = 'text';
+                input.name = 'server_ip';
+                input.placeholder = 'Server IP';
+                serverIpsDiv.appendChild(label);
+                serverIpsDiv.appendChild(input);
+                document.querySelector('form').insertBefore(serverIpsDiv, document.querySelector('input[type="submit"]'));
+            });
+            document.querySelector('form').appendChild(addExtraBtn);
+        });
+    </script>
+</body>
+</html>
