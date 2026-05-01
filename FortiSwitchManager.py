@@ -1,9 +1,9 @@
 import re
 
 # 來源檔案
-source_get_physical_conn_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology\FortiSwitchManager/VA14-get-physical-conn.txt"
-source_get_conn_status_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology\FortiSwitchManager/VA14-get-conn-status.txt"
-output_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology\FortiSwitchManager/VA14-raw.txt"
+source_get_physical_conn_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology\FortiSwitchManager/CA31-get-physical-conn.txt"
+source_get_conn_status_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology\FortiSwitchManager/CA31-get-conn-status.txt"
+output_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology\FortiSwitchManager/CA31-raw.txt"
 
 # 讀取 get-physical-conn，提取 Serial number
 serial_numbers = set()
