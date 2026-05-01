@@ -11,15 +11,15 @@ except ImportError:
     sys.exit(1)
 
 # ========= 檔案路徑（可調整）=========
-source_excel_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology/Device.xlsx"
-source_txt_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology/WAW11-CFW-M2-01.txt"
+source_excel_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology/Device_old version.xlsx"
+source_txt_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology/KUL14-CFW-M2.txt"
 graphviz_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology/Graphviz.txt"
-output_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology/WAW11.gv"
+output_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology/KUL14-CFW-M2.gv"
 
 
 # ========= 工具函式 =========
-def load_sn_map(excel_path: str) -> dict:
-    """讀取 Excel，回傳 {SN: (NAME, IP)}"""
+def load_device_map(excel_path: str) -> dict:
+    """讀取 Excel，建立雙鍵對照表 {NAME: (NAME, IP, SN)} 以及 {SN: (NAME, IP, SN)}"""
     xl = pd.ExcelFile(excel_path)
 
     # 找 "Device name" 工作表（忽略大小寫與空白），找不到就用第一個
@@ -31,15 +31,27 @@ def load_sn_map(excel_path: str) -> dict:
     if not required.issubset(df.columns):
         raise ValueError(f"Excel 工作表缺少必要欄位，需要 {required}；目前欄位：{list(df.columns)}")
 
-    sn_map = {}
+    device_map = {}
     for _, row in df.iterrows():
+        name = str(row["NAME"]).strip()
         sn = str(row["SN"]).strip()
-        if not sn:
-            continue
-        name = str(row["NAME"]).strip() if pd.notna(row["NAME"]) else "null"
-        ip = str(row["IP"]).strip() if pd.notna(row["IP"]) else "null"
-        sn_map[sn] = (name, ip)
-    return sn_map
+        ip = str(row["IP"]).strip()
+
+        # 判斷是否為有效值
+        name_valid = name and name.lower() not in ("nan", "null", "none")
+        sn_valid = sn and sn.lower() not in ("nan", "null", "none")
+
+        final_name = name if name_valid else "null"
+        final_ip = ip if (ip and ip.lower() not in ("nan", "null", "none")) else "null"
+        final_sn = sn if sn_valid else "null"
+
+        # 雙鍵對照邏輯：將 NAME 與 SN 都註冊為字典的 Key
+        if name_valid:
+            device_map[name.upper()] = (final_name, final_ip, final_sn)
+        if sn_valid:
+            device_map[sn.upper()] = (final_name, final_ip, final_sn)
+
+    return device_map
 
 
 def fmt_triple(name: str, ip: str, sn: str) -> str:
@@ -47,12 +59,14 @@ def fmt_triple(name: str, ip: str, sn: str) -> str:
     return f"{name}\\n{ip}\\n{sn}"
 
 
-def get_device_info(sn: str, sn_map: dict) -> str:
-    """從 SN 取 'NAME\\nIP\\nSN'；若無對應，NAME/IP 以 null"""
-    if sn in sn_map:
-        name, ip = sn_map[sn]
+def get_device_info(identifier: str, device_map: dict) -> str:
+    """從 Hostname 或 SN 取 'NAME\\nIP\\nSN'；若無對應，填補 null"""
+    identifier_upper = identifier.strip().upper()
+    if identifier_upper in device_map:
+        name, ip, sn = device_map[identifier_upper]
         return fmt_triple(name, ip, sn)
-    return fmt_triple("null", "null", sn)
+    # 如果在 Excel 完全找不到，保留原始識別碼，另外兩個欄位填 null
+    return fmt_triple(identifier, "null", "null")
 
 
 def clean_port(port_str: str) -> str:
@@ -63,17 +77,18 @@ def clean_port(port_str: str) -> str:
 
 def parse_pair_line(line: str) -> Tuple[str, str, str, str] | None:
     """
-    解析像：SN1(portX)  <<-->>  SN2(portY)
-    回傳 (sn1, raw_port1, sn2, raw_port2)
+    解析像：FRA11-1.2.33(portX)  <<-->>  FG10E1TB(portY)
+    回傳 (host1, raw_port1, host2, raw_port2)
     """
-    pairs = re.findall(r"([A-Za-z0-9]+)\(([^)]*)\)", line)
+    # 修正正則表達式：加入 \. 支援小數點
+    pairs = re.findall(r"([A-Za-z0-9\-_\.]+)\(([^)]*)\)", line)
     if len(pairs) != 2:
         return None
-    (sn1, raw_port1), (sn2, raw_port2) = pairs
-    return sn1.strip(), raw_port1.strip(), sn2.strip(), raw_port2.strip()
+    (host1, raw_port1), (host2, raw_port2) = pairs
+    return host1.strip(), raw_port1.strip(), host2.strip(), raw_port2.strip()
 
 
-def convert_txt_to_edges(txt_file: str, sn_map: dict) -> List[Tuple[str, str, str]]:
+def convert_txt_to_edges(txt_file: str, device_map: dict) -> List[Tuple[str, str, str]]:
     """
     將原始文字檔轉換為 Graphviz edge 元組列表，並依設備類型處理重複連線。
     - CFW/非 SWITCH 之間的連線，去重只保留第一條。
@@ -89,10 +104,10 @@ def convert_txt_to_edges(txt_file: str, sn_map: dict) -> List[Tuple[str, str, st
         parsed = parse_pair_line(line)
         if not parsed:
             continue
-        sn1, raw_port1, sn2, raw_port2 = parsed
+        host1, raw_port1, host2, raw_port2 = parsed
 
-        left_dev = get_device_info(sn1, sn_map)
-        right_dev = get_device_info(sn2, sn_map)
+        left_dev = get_device_info(host1, device_map)
+        right_dev = get_device_info(host2, device_map)
         p1 = clean_port(raw_port1)
         p2 = clean_port(raw_port2)
         label = f"{p1} -> {p2}"
@@ -168,12 +183,12 @@ def main():
             print(f"找不到檔案：{path}")
             sys.exit(1)
 
-    # 1) Excel → SN 對照
-    sn_map = load_sn_map(source_excel_file_path)
-    print(f"已載入 SN 對照：{len(sn_map)} 筆")
+    # 1) Excel → 設備對照 (現支援 Hostname 與 SN 雙對應)
+    device_map = load_device_map(source_excel_file_path)
+    print(f"已載入設備對照：{len(device_map)} 筆 (含名稱與序號雙鍵)")
 
     # 2) 轉換來源 TXT → edges (依設備類型處理)
-    edges_list = convert_txt_to_edges(source_txt_file_path, sn_map)
+    edges_list = convert_txt_to_edges(source_txt_file_path, device_map)
     print(f"已處理 edges：{len(edges_list)} 條連線")
 
     # 3) 從 edges 抽出節點並分類
@@ -185,22 +200,11 @@ def main():
         gv_lines = f.readlines()
 
     # 5) 處理所有要插入的內容
-    # 這裡將所有節點和邊緣合併到同一個列表中
-    all_insert_lines = []
-
-    # CFW 節點
     cfw_insert_lines = sorted(list(cfw_nodes))
-    all_insert_lines.extend(cfw_insert_lines)
-
-    # FSW 節點
     fsw_insert_lines = sorted(list(fsw_nodes))
-    all_insert_lines.extend(fsw_insert_lines)
-
-    # ASW 節點
     asw_insert_lines = sorted(list(asw_nodes))
-    all_insert_lines.extend(asw_insert_lines)
 
-    # 所有邊緣
+    # 所有邊緣 (維持只有一層雙引號的正確格式)
     all_edge_lines = []
     for left, right, label in edges_list:
         all_edge_lines.append(f'"{left}" -> {{"{right}"}} [label="{label}"]')
