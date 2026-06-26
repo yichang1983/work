@@ -11,14 +11,15 @@ except ImportError:
     sys.exit(1)
 
 # ========= 檔案路徑（可調整）=========
-source_excel_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology/Device.xlsx"
-source_txt_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology\FortiSwitchManager/CA31-get-physical-conn.txt"
-graphviz_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology/Graphviz.txt"
-output_file_path = "C:/Users\yi-chang.chen\PycharmProjects\PythonProject\Topology\FortiSwitchManager/CA31-FortiSwitchManager.txt"
+source_excel_file_path = "C:/Users/yi-chang.chen/PyCharmMiscProject/Python_topology/FortiSwitchManager/Device.xlsx"
+source_txt_file_path = "C:/Users/yi-chang.chen/PyCharmMiscProject/Python_topology/FortiSwitchManager/CWL13-FortiSWMGMT-01.txt"
+graphviz_file_path = "C:/Users/yi-chang.chen/PyCharmMiscProject/Python_topology/FortiSwitchManager/Graphviz.txt"
+output_file_path = "C:/Users/yi-chang.chen/PyCharmMiscProject/Python_topology/FortiSwitchManager/CWL13-FortiSWMGMT-01.gv"
+
 
 # ========= 工具函式 =========
-def load_sn_map(excel_path: str) -> dict:
-    """讀取 Excel，回傳 {SN: (NAME, IP)}"""
+def load_name_map(excel_path: str) -> dict:
+    """讀取 Excel，改為回傳 {NAME_大寫: (原始NAME, IP, SN)} 以便用 Hostname 來反查"""
     xl = pd.ExcelFile(excel_path)
 
     # 找 "Device name" 工作表（忽略大小寫與空白），找不到就用第一個
@@ -30,28 +31,34 @@ def load_sn_map(excel_path: str) -> dict:
     if not required.issubset(df.columns):
         raise ValueError(f"Excel 工作表缺少必要欄位，需要 {required}；目前欄位：{list(df.columns)}")
 
-    sn_map = {}
+    name_map = {}
     for _, row in df.iterrows():
-        sn = str(row["SN"]).strip()
-        if not sn:
+        name = str(row["NAME"]).strip()
+        if not name or name.lower() == 'nan':
             continue
-        name = str(row["NAME"]).strip() if pd.notna(row["NAME"]) else "null"
+
+        sn = str(row["SN"]).strip() if pd.notna(row["SN"]) else "null"
         ip = str(row["IP"]).strip() if pd.notna(row["IP"]) else "null"
-        sn_map[sn] = (name, ip)
-    return sn_map
+
+        # 為了避免大小寫問題，將字典的 key 轉大寫，但保留原始名稱
+        name_map[name.upper()] = (name, ip, sn)
+    return name_map
 
 
 def fmt_triple(name: str, ip: str, sn: str) -> str:
-    """組合成 'NAME\\nIP\\nSN'（注意為反斜線 n，而非實際換行）"""
+    """組合成 'NAME\\nIP\\nSN'（注意為反斜線 n，而非實際換行，給 Graphviz 識別用）"""
     return f"{name}\\n{ip}\\n{sn}"
 
 
-def get_device_info(sn: str, sn_map: dict) -> str:
-    """從 SN 取 'NAME\\nIP\\nSN'；若無對應，NAME/IP 以 null"""
-    if sn in sn_map:
-        name, ip = sn_map[sn]
-        return fmt_triple(name, ip, sn)
-    return fmt_triple("null", "null", sn)
+def get_device_info_by_name(hostname: str, name_map: dict) -> str:
+    """從 Hostname 取 'NAME\\nIP\\nSN'；若無對應，IP/SN 顯示為 null"""
+    key = hostname.upper()
+    if key in name_map:
+        orig_name, ip, sn = name_map[key]
+        # 使用 Excel 內的名稱，或者 TXT 抓出來的名稱都可以
+        return fmt_triple(orig_name, ip, sn)
+    # 如果 Excel 沒這台，就顯示原本抓到的名稱，配上 null
+    return fmt_triple(hostname, "null", "null")
 
 
 def clean_port(port_str: str) -> str:
@@ -62,21 +69,21 @@ def clean_port(port_str: str) -> str:
 
 def parse_pair_line(line: str) -> Tuple[str, str, str, str] | None:
     """
-    解析像：SN1(portX)  <<-->>  SN2(portY)
-    回傳 (sn1, raw_port1, sn2, raw_port2)
+    解析像：Hostname1(portX)  <<-->>  Hostname2(portY)
+    回傳 (host1, raw_port1, host2, raw_port2)
+    注意：加入了 \-_ 來允許名稱中包含減號與底線 (如 CWL13-DM110-PRB-U23)
     """
-    pairs = re.findall(r"([A-Za-z0-9]+)\(([^)]*)\)", line)
+    # [A-Za-z0-9\-_]+ 可以匹配大小寫字母、數字、減號及底線
+    pairs = re.findall(r"([A-Za-z0-9\-_]+)\(([^)]*)\)", line)
     if len(pairs) != 2:
         return None
-    (sn1, raw_port1), (sn2, raw_port2) = pairs
-    return sn1.strip(), raw_port1.strip(), sn2.strip(), raw_port2.strip()
+    (host1, raw_port1), (host2, raw_port2) = pairs
+    return host1.strip(), raw_port1.strip(), host2.strip(), raw_port2.strip()
 
 
-def convert_txt_to_edges(txt_file: str, sn_map: dict) -> List[Tuple[str, str, str]]:
+def convert_txt_to_edges(txt_file: str, name_map: dict) -> List[Tuple[str, str, str]]:
     """
     將原始文字檔轉換為 Graphviz edge 元組列表，並依設備類型處理重複連線。
-    - CFW/非 SWITCH 之間的連線，去重只保留第一條。
-    - SWITCH/SWITCH 之間的連線，保留所有連線。
     """
     edges_list = []
     cfw_other_processed_keys = set()
@@ -88,10 +95,12 @@ def convert_txt_to_edges(txt_file: str, sn_map: dict) -> List[Tuple[str, str, st
         parsed = parse_pair_line(line)
         if not parsed:
             continue
-        sn1, raw_port1, sn2, raw_port2 = parsed
 
-        left_dev = get_device_info(sn1, sn_map)
-        right_dev = get_device_info(sn2, sn_map)
+        name1, raw_port1, name2, raw_port2 = parsed
+
+        # 這裡改用 name 去映射 Excel 的資訊
+        left_dev = get_device_info_by_name(name1, name_map)
+        right_dev = get_device_info_by_name(name2, name_map)
         p1 = clean_port(raw_port1)
         p2 = clean_port(raw_port2)
         label = f"{p1} -> {p2}"
@@ -102,7 +111,6 @@ def convert_txt_to_edges(txt_file: str, sn_map: dict) -> List[Tuple[str, str, st
         is_switch_to_switch = is_left_switch and is_right_switch
 
         if is_switch_to_switch:
-            # SWITCH-SWITCH 連線，直接加入列表，不進行去重
             edges_list.append((left_dev, right_dev, label))
         else:
             # 其他連線 (CFW-SWITCH, CFW-CFW)，進行去重
@@ -167,12 +175,12 @@ def main():
             print(f"找不到檔案：{path}")
             sys.exit(1)
 
-    # 1) Excel → SN 對照
-    sn_map = load_sn_map(source_excel_file_path)
-    print(f"已載入 SN 對照：{len(sn_map)} 筆")
+    # 1) Excel → 以 NAME 當 Key 建立對照
+    name_map = load_name_map(source_excel_file_path)
+    print(f"已載入 Hostname 對照：{len(name_map)} 筆")
 
-    # 2) 轉換來源 TXT → edges (依設備類型處理)
-    edges_list = convert_txt_to_edges(source_txt_file_path, sn_map)
+    # 2) 轉換來源 TXT → edges
+    edges_list = convert_txt_to_edges(source_txt_file_path, name_map)
     print(f"已處理 edges：{len(edges_list)} 條連線")
 
     # 3) 從 edges 抽出節點並分類
@@ -184,27 +192,16 @@ def main():
         gv_lines = f.readlines()
 
     # 5) 處理所有要插入的內容
-    # 這裡將所有節點和邊緣合併到同一個列表中
-    all_insert_lines = []
-
-    # CFW 節點
     cfw_insert_lines = sorted(list(cfw_nodes))
-    all_insert_lines.extend(cfw_insert_lines)
-
-    # FSW 節點
     fsw_insert_lines = sorted(list(fsw_nodes))
-    all_insert_lines.extend(fsw_insert_lines)
-
-    # ASW 節點
     asw_insert_lines = sorted(list(asw_nodes))
-    all_insert_lines.extend(asw_insert_lines)
 
     # 所有邊緣
     all_edge_lines = []
     for left, right, label in edges_list:
         all_edge_lines.append(f'"{left}" -> {{"{right}"}} [label="{label}"]')
 
-    # 6) 插入到模板中，節點和邊緣分開插入
+    # 6) 插入到模板中
     gv_lines = insert_after_marker(gv_lines, "node [fillcolor = red]", cfw_insert_lines)
     gv_lines = insert_after_marker(gv_lines, "node [fillcolor = blue]", fsw_insert_lines)
     gv_lines = insert_after_marker(gv_lines, "node [fillcolor = green]", asw_insert_lines)
