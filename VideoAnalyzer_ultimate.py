@@ -141,13 +141,13 @@ os.environ["PATH"] = (
 # Change this path when analysing a different video.
 video_file = Path(
     r"C:\Users\yi-chang.chen\Downloads"
-    r"\video_with_sound.mp4"
+    r"\2026-08-12-153244.mp4"
 )
 
 # Change this path if a different output folder is required.
 output_dir = Path(
     r"C:\Users\yi-chang.chen\Downloads"
-    r"\video_with_sound"
+    r"\2026-08-12-153244"
 )
 
 
@@ -159,15 +159,16 @@ output_dir = Path(
 #minimum_gap_seconds = 1
 # ==================================================
 
-# Check the video every three seconds.
-check_every_seconds = 1
+# FortiGate GUI / CLI 教學影片建議 2 到 5 秒
+check_every_seconds = 2
 
-# Lower value produces more Keyframes.
-# Higher value produces fewer Keyframes.
-change_threshold = 4.0
+# 畫面差異門檻
+# 數字越低越敏感，會輸出更多圖片
+# 數字越高越不敏感，會輸出較少圖片
+change_threshold = 8.0
 
-# Prevent very similar screenshots being saved too close together.
-minimum_gap_seconds = 2
+# 最短截圖間隔，避免短時間內產生太多類似截圖
+minimum_gap_seconds = 5
 
 # Comparison image width.
 # This does not reduce the saved Keyframe resolution.
