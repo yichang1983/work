@@ -27,65 +27,7 @@ from PIL import Image, ImageDraw, ImageFont
 #winget install ffmpeg (在PowerShell 裡打上, 安裝完之後：關閉 PowerShell,重新開啟 PowerShell, 測試：ffmpeg -version 應該看到：ffmpeg version 7.x, 再測：ffprobe -version 應該看到：ffprobe version 7.x)
 # ==================================================
 
-# ==================================================
-#以下跟請AI做文件:
-# 我上傳的是一段與 Fortinet Support Engineer 進行故障排除錄影後產生的分析資料。
-#
-# 附件包括：
-# 1. transcript.txt，完整語音逐字稿
-# 2. transcript_segments.csv，包含逐字稿時間戳記
-# 3. index.csv，包含 Keyframe 檔名及影片時間點
-# 4. 所有 Contact Sheet 圖片，提供影片操作流程總覽
-# 5. ai_analysis_package.md，包含預期的分析結構
-#
-# 請先完整分析所有附件，並依照時間順序還原 Support Engineer 的故障排除流程。
-#
-# 請建立一份可直接放入技術知識庫或 Confluence 的 Markdown Troubleshooting Runbook，內容必須包括：
-#
-# # Fortinet Troubleshooting Runbook
-#
-# ## 1. Purpose
-# ## 2. Scope
-# ## 3. Issue Summary
-# ## 4. Symptoms
-# ## 5. Impact Assessment
-# ## 6. Environment and Affected Components
-# ## 7. Investigation Timeline
-# ## 8. Initial Verification
-# ## 9. GUI Checks
-# ## 10. CLI Commands and Outputs
-# ## 11. Log Evidence
-# ## 12. Troubleshooting Decision Points
-# ## 13. Root Cause Analysis
-# ## 14. Remediation
-# ## 15. Post-Recovery Validation
-# ## 16. Rollback Considerations
-# ## 17. Escalation Criteria
-# ## 18. Preventive Actions
-# ## 19. Reusable SOP
-# ## 20. Related CLI Commands
-# ## 21. References and Evidence Mapping
-#
-# 要求：
-# - 所有步驟必須按照影片時間顺序排列。
-# - 將 Transcript 與 Keyframe 的時間戳記互相對應。
-# - 列出影片中實際出現的 Fortinet CLI 指令。
-# - 不要猜測或編造沒有出現在附件中的指令、輸出、設定、根因或修復動作。
-# - 清楚區分「已確認事實」、「Support Engineer 的說明」和「尚未確認的可能原因」。
-# - 對每個技術步驟說明執行目的、觀察結果及下一個決策。
-# - 保留重要的錯誤訊息、Log Message、Tunnel 名稱、Interface 名稱和設定值。
-# - 如果 Contact Sheet 中的 CLI、Log 或設定文字太小，請列出需要我補充的原始 keyframe 檔名。
-# - 如果證據不足以確認 Root Cause，請明確標示為未確認，不要自行推論。
-# - 輸出使用專業英文，格式為 Markdown。
-# - 內容要適合資料中心 Network Operations、Incident Response 和後續知識轉移使用。
-#
-# 請先提供：
-# 1. 影片內容與問題的初步判斷
-# 2. 調查流程的時間線
-# 3. 需要補充的原始 Keyframe 清單
-#
-# 然後直接產生目前證據可支持的完整 Runbook。
-# ==================================================
+
 
 
 
@@ -140,14 +82,14 @@ os.environ["PATH"] = (
 
 # Change this path when analysing a different video.
 video_file = Path(
-    r"C:\Users\yi-chang.chen\Downloads"
-    r"\2026-08-12-153244.mp4"
+    r"C:\Users\yi-chang.chen\OneDrive - Vantage Data Centers\Documents\Support\Wholesale\Tickets\EMEA\Firewalls\Conserve mode-high memory"
+    r"\High CPU.mp4"
 )
 
 # Change this path if a different output folder is required.
 output_dir = Path(
-    r"C:\Users\yi-chang.chen\Downloads"
-    r"\2026-08-12-153244"
+    r"C:\Users\yi-chang.chen\OneDrive - Vantage Data Centers\Documents\Support\Wholesale\Tickets\EMEA\Firewalls\Conserve mode-high memory"
+    r"\High CPU"
 )
 
 
@@ -165,10 +107,10 @@ check_every_seconds = 2
 # 畫面差異門檻
 # 數字越低越敏感，會輸出更多圖片
 # 數字越高越不敏感，會輸出較少圖片
-change_threshold = 8.0
+change_threshold = 9.0
 
 # 最短截圖間隔，避免短時間內產生太多類似截圖
-minimum_gap_seconds = 5
+minimum_gap_seconds = 6
 
 # Comparison image width.
 # This does not reduce the saved Keyframe resolution.
@@ -2689,3 +2631,733 @@ print(
     "4. Requested full-resolution "
     "Keyframes, if required"
 )
+
+
+# ==================================================
+#以下跟請AI做文件:
+# # Enterprise TAC Investigation Framework
+#
+# ## Mission
+#
+# Analyze all available evidence and reconstruct the engineering investigation.
+#
+# This is NOT a video summarization task.
+#
+# Treat the recording as evidence of a live troubleshooting session.
+#
+# Your objective is to reverse engineer:
+#
+# - Investigation strategy
+# - Troubleshooting methodology
+# - Evidence collection process
+# - Decision making process
+# - Hypothesis validation process
+# - Root cause proof chain
+# - Reusable engineering workflow
+#
+# The final deliverable must function as:
+#
+# - TAC RCA Report
+# - Troubleshooting Runbook
+# - Knowledge Transfer Document
+# - Engineering Playbook
+#
+# ---
+#
+# ## Investigation Priority
+#
+# Always prioritize:
+#
+# HOW the engineer proved the issue
+#
+# over
+#
+# WHAT screens were opened
+#
+# Focus on reasoning rather than chronology.
+#
+# ---
+#
+# ## Evidence Sources
+#
+# Analyze all available evidence.
+#
+# Examples:
+#
+# - Transcript
+# - Video
+# - Keyframes
+# - Contact Sheets
+# - GUI Screenshots
+# - CLI Output
+# - Debug Output
+# - Logs
+# - Packet Captures
+# - Configuration
+# - Case Notes
+#
+# Correlate evidence whenever possible.
+#
+# ---
+#
+# ## Evidence First Principle
+#
+# Every conclusion must follow:
+#
+# Evidence
+# ↓
+# Observation
+# ↓
+# Finding
+# ↓
+# Hypothesis
+# ↓
+# Validation
+# ↓
+# Conclusion
+# ↓
+# Root Cause
+#
+# Never skip stages.
+#
+# Never jump directly from evidence to root cause.
+#
+# ---
+#
+# ## Evidence Integrity Rules
+#
+# Use only information supported by evidence.
+#
+# Allowed:
+#
+# - Visible commands
+# - Visible outputs
+# - Visible logs
+# - Visible configurations
+# - Visible GUI states
+# - Transcript statements
+# - Visible timestamps
+# - Visible identifiers
+#
+# Never invent:
+#
+# - Commands
+# - Outputs
+# - Root causes
+# - Engineer statements
+# - TAC conclusions
+# - Configurations
+# - Remediation steps
+# - Validation results
+#
+# Unknown information must remain unknown.
+#
+# ---
+#
+# ## Evidence Classification
+#
+# Every statement must belong to one category.
+#
+# ### Confirmed Fact
+#
+# Directly proven by evidence.
+#
+# ### Evidence-Based Observation
+#
+# Reasonable interpretation supported by evidence.
+#
+# ### Unconfirmed Possibility
+#
+# Potential explanation not yet proven.
+#
+# ---
+#
+# ## Confidence Model
+#
+# Every major statement must include:
+#
+# High
+# Medium
+# Low
+#
+# High:
+# Multiple evidence sources agree.
+#
+# Medium:
+# Partially validated.
+#
+# Low:
+# Limited supporting evidence.
+#
+# ---
+#
+# ## Investigation Reconstruction
+#
+# Reconstruct the investigation based on engineering logic.
+#
+# Possible examples:
+#
+# Issue Identification
+# ↓
+# Scope Definition
+# ↓
+# Connectivity Validation
+# ↓
+# Routing Validation
+# ↓
+# Policy Validation
+# ↓
+# Session Validation
+# ↓
+# NAT Validation
+# ↓
+# VPN Validation
+# ↓
+# Authentication Validation
+# ↓
+# DNS Validation
+# ↓
+# Log Correlation
+# ↓
+# Debug Validation
+# ↓
+# Root Cause Proof
+#
+# Only include stages supported by evidence.
+#
+# Do not force a generic workflow.
+#
+# ---
+#
+# ## Action Analysis Model
+#
+# For every troubleshooting action explain:
+#
+# ### Purpose
+#
+# Why was this action performed?
+#
+# ### Evidence Used
+#
+# What evidence was examined?
+#
+# ### Hypothesis
+#
+# What was being tested?
+#
+# ### Observation
+#
+# What was observed?
+#
+# ### Interpretation
+#
+# What does the observation indicate?
+#
+# ### Decision
+#
+# Why was the next action chosen?
+#
+# ### Confidence
+#
+# High / Medium / Low
+#
+# ---
+#
+# ## CLI Analysis Model
+#
+# For every observed command include:
+#
+# Command
+#
+# Evidence Status
+#
+# Purpose
+#
+# Observed Output
+#
+# Interpretation
+#
+# Abnormal Indicators
+#
+# Decision Impact
+#
+# Confidence
+#
+# Commands not visible in evidence must be placed under:
+#
+# Possible Supporting Commands
+#
+# and marked:
+#
+# Not Visible In Evidence
+#
+# ---
+#
+# ## GUI Analysis Model
+#
+# For every important GUI page include:
+#
+# Page
+#
+# Purpose
+#
+# Evidence
+#
+# Observation
+#
+# Interpretation
+#
+# Decision Impact
+#
+# Confidence
+#
+# ---
+#
+# ## Log Analysis Model
+#
+# For every important log include:
+#
+# Timestamp
+#
+# Device
+#
+# Log Type
+#
+# Message
+#
+# Observed Indicators
+#
+# Interpretation
+#
+# Relationship To Investigation
+#
+# Relationship To Root Cause
+#
+# Confidence
+#
+# Missing fields:
+#
+# Not Visible In Evidence
+#
+# ---
+#
+# ## Packet Analysis Model
+#
+# If packet captures exist include:
+#
+# Capture Location
+#
+# Traffic Direction
+#
+# Observed Behaviour
+#
+# Expected Behaviour
+#
+# Failure Indicators
+#
+# Interpretation
+#
+# Confidence
+#
+# ---
+#
+# ## Configuration Analysis Model
+#
+# For every relevant configuration item:
+#
+# Configuration Area
+#
+# Observed Value
+#
+# Expected Value
+#
+# Potential Impact
+#
+# Relationship To Symptom
+#
+# Confidence
+#
+# Analyze only visible configuration.
+#
+# ---
+#
+# ## Hypothesis Driven Investigation
+#
+# Continuously identify:
+#
+# ### Active Hypothesis
+#
+# ### Evidence Requested
+#
+# ### Evidence Obtained
+#
+# ### Validation Result
+#
+# Confirmed
+# Eliminated
+# Unconfirmed
+#
+# ### Next Decision
+#
+# ### Confidence
+#
+# The report should show how hypotheses evolved throughout the investigation.
+#
+# ---
+#
+# ## Root Cause Validation Rules
+#
+# A root cause cannot be established by:
+#
+# - One screenshot
+# - One log
+# - One command
+# - One statement
+# - One GUI status
+#
+# Root cause requires multiple supporting evidence sources.
+#
+# If evidence is insufficient:
+#
+# Root Cause = Unconfirmed
+#
+# ---
+#
+# ## Root Cause Proof Chain
+#
+# Always demonstrate proof.
+#
+# Format:
+#
+# Evidence A
+# +
+# Evidence B
+# +
+# Evidence C
+#
+# ↓
+#
+# Finding
+#
+# ↓
+#
+# Conclusion
+#
+# ↓
+#
+# Root Cause
+#
+# ↓
+#
+# Confidence
+#
+# Every root cause must be traceable to evidence.
+#
+# ---
+#
+# ## Missing Evidence Handling
+#
+# If evidence is insufficient:
+#
+# Provide:
+#
+# Known Facts
+#
+# Unknown Facts
+#
+# Remaining Hypotheses
+#
+# Required Validation
+#
+# Minimal Additional Evidence Required
+#
+# Request only the smallest amount of additional evidence necessary.
+#
+# ---
+#
+# ## Knowledge Extraction
+#
+# Extract reusable engineering knowledge.
+#
+# Examples:
+#
+# - Troubleshooting techniques
+# - CLI usage patterns
+# - GUI workflows
+# - Validation methods
+# - Debug methodology
+# - Log correlation methods
+# - Decision patterns
+# - Common pitfalls
+# - Reusable investigation techniques
+#
+# ---
+#
+# ## Reusable Runbook Generation
+#
+# Transform the investigation into:
+#
+# ### Troubleshooting Workflow
+#
+# ### Decision Tree
+#
+# ### Validation Checklist
+#
+# ### CLI Playbook
+#
+# ### GUI Playbook
+#
+# ### Log Analysis Playbook
+#
+# ### Packet Analysis Playbook
+#
+# ### Root Cause Identification Method
+#
+# ### Evidence Collection Checklist
+#
+# The resulting document should allow another engineer to reproduce the same investigation without watching the original recording.
+#
+# ---
+#
+# ## Conflict Resolution
+#
+# If evidence conflicts:
+#
+# Priority Order:
+#
+# 1. CLI Output
+# 2. Log Evidence
+# 3. Configuration Evidence
+# 4. Packet Capture
+# 5. GUI State
+# 6. Transcript
+# 7. AI Interpretation
+#
+# Document all conflicts explicitly.
+#
+# ---
+#
+# ## Analyst Role
+#
+# Act as:
+#
+# Fortinet Principal TAC Engineer
+#
+# or
+#
+# Senior Network Troubleshooting Architect
+#
+# performing:
+#
+# - Post Incident Review
+# - Technical RCA
+# - Knowledge Transfer Review
+#
+# Your objective is not to summarize the case.
+#
+# Your objective is to teach another engineer:
+#
+# - How the investigation was performed
+# - Why each action was taken
+# - Which hypotheses were eliminated
+# - Which hypotheses were confirmed
+# - How the root cause was proven
+# - How to reproduce the investigation
+#
+# ---
+#
+# ## Final Deliverable
+#
+# Produce:
+#
+# 1. Executive Summary
+# 2. Environment
+# 3. Symptoms
+# 4. Investigation Strategy
+# 5. Investigation Timeline
+# 6. GUI Investigation
+# 7. CLI Investigation
+# 8. Log Analysis
+# 9. Packet/Debug Analysis
+# 10. Configuration Analysis
+# 11. Evidence Summary
+# 12. Hypothesis Analysis
+# 13. Decision Tree
+# 14. Key Findings
+# 15. Root Cause Analysis
+# 16. Remediation
+# 17. Validation
+# 18. Preventive Actions
+# 19. Reusable Troubleshooting Workflow
+# 20. CLI Playbook
+# 21. GUI Playbook
+# 22. Log Correlation Playbook
+# 23. Knowledge Transfer Notes
+# 24. Minimal Additional Evidence Required
+# 25. References
+#
+# Final output language:
+#
+# Professional English Markdown.
+#
+# ---
+#
+# ---
+#
+# ## Output File Requirement
+#
+# After completing the analysis:
+#
+# 1. Generate the full report.
+# 2. Save the report as a Markdown file.
+# 3. Create a downloadable attachment.
+# 4. The report content must be written entirely inside the Markdown file.
+#
+# File Format:
+#
+# Markdown (.md)
+#
+# Encoding:
+#
+# UTF-8
+#
+# File Naming Convention:
+#
+# TAC_Investigation_Report_<CaseID>.md
+#
+# If no Case ID exists:
+#
+# TAC_Investigation_Report.md
+#
+# Requirements:
+#
+# - Preserve all Markdown formatting.
+# - Preserve all headings (#, ##, ###).
+# - Preserve all tables.
+# - Preserve all code blocks.
+# - Preserve all bullet lists.
+# - Preserve all numbered lists.
+# - Do not convert Markdown into plain text.
+# - Do not convert Markdown into HTML.
+# - Do not convert Markdown into PDF.
+# - Do not convert Markdown into DOCX.
+# - Do not create a TXT file.
+# - Do not truncate content.
+# - Do not provide only a chat response.
+# - The complete report must be stored inside the Markdown file.
+#
+# IMPORTANT:
+#
+# The final deliverable MUST be a physical Markdown file (.md).
+#
+# The downloadable attachment MUST use the .md extension.
+#
+# TXT output is prohibited.
+#
+# PDF output is prohibited.
+#
+# DOCX output is prohibited.
+#
+# Only Markdown (.md) output is allowed.
+#
+# ---
+#
+# ## Final Output Format
+#
+# Output Deliverables:
+#
+# 1. Downloadable Markdown file (.md)
+# 2. Full report content stored inside the Markdown file
+# 3. UTF-8 encoding
+# 4. Complete Markdown formatting preserved
+# 5. No content truncation
+#
+# Example:
+#
+# TAC_Investigation_Report_123456.md
+#
+# or
+#
+# TAC_Investigation_Report.md
+#
+# ---
+#
+# ## File Creation Directive
+#
+# Create the following attachment:
+#
+# Filename:
+#
+# TAC_Investigation_Report_<CaseID>.md
+#
+# Mime Type:
+#
+# text/markdown
+#
+# Encoding:
+#
+# UTF-8
+#
+# The report content must be written directly into the Markdown file.
+#
+# Do not output the report as plain chat text when file generation is available.
+#
+# Return the generated Markdown file as the primary deliverable.
+#
+# ---
+#
+# ## Agent File Generation Rule
+#
+# The final response MUST contain a downloadable file attachment.
+#
+# Attachment Type:
+#
+# Markdown (.md)
+#
+# Required Extension:
+#
+# .md
+#
+# Do NOT generate:
+#
+# .txt
+# .pdf
+# .docx
+# .rtf
+# .html
+#
+# Only generate:
+#
+# .md
+#
+# The primary deliverable MUST be the Markdown file attachment.
+#
+# Do not return the report only as chat text.
+#
+# Required filename:
+#
+# TAC_Investigation_Report_<CaseID>.md
+#
+# If no Case ID exists:
+#
+# TAC_Investigation_Report.md
+#
+# ## Output Priority
+#
+# Priority 1:
+# Generate and attach the Markdown file.
+#
+# Priority 2:
+# Store the complete report inside the Markdown file.
+#
+# Priority 3:
+# Provide a brief summary in chat if desired.
+#
+# Never replace the Markdown file with chat text.
+#
+# Never replace the Markdown file with a TXT file.
+#
+# Never replace the Markdown file with a PDF file.
+#
+# Never replace the Markdown file with a DOCX file.
+# ==================================================
